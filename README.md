@@ -1,2 +1,2 @@
-# discord-sports-bot
- Discord bot that shares info about sports
+# discord-queue-bot
+ Discord bot that creates and manages queue for game choosing or similar events
