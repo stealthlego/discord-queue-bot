@@ -59,7 +59,7 @@ async def create_queue(ctx):
     checking_msg = await ctx.send('Assembling queue...')
     voice_obj = ctx.message.author.voice
 
-    #remind user they are not in a voice chat room
+    #checks if user is in voice chat
     try:
         channel = ctx.message.author.voice.channel
 
@@ -85,6 +85,7 @@ async def create_queue(ctx):
             await checking_msg.delete()
             await voice_obj.channel.connect()
     except:
+        #remind user they are not in a voice chat room
         no_voice_msg = await ctx.send('You are not in a voice channel. Please join and try again')
         time.sleep(3)
         #cleanup
@@ -158,6 +159,9 @@ async def remove(ctx, person):
 
         await ctx.send(f'Removed {removed_list}')
     
+    #prints current queue
+    await print_queue(ctx)
+
     #clean up bot messages
     if bot_msg != None:
         time.sleep(5)
