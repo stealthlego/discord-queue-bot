@@ -51,10 +51,11 @@ async def msg_cleanup(ctx, msgs, delay):
 
 ### Bot Tasks ###
 
+@tasks.loop(seconds=5)
 async def check_users(ctx):
     '''checks to see if somebody new joined the voice chat'''
     await update(ctx)
-    await asyncio.sleep(5)
+    #await asyncio.sleep(5)
 
 ### Bot Commands ###
 
@@ -70,7 +71,7 @@ async def create_queue(ctx):
     #checks if user is in voice chat
     try:
         channel = ctx.author.voice.channel
-        #await voice_obj.channel.connect()
+        await voice_obj.channel.connect()
 
         #asks if user wants to create new queue if one already exists
         if len(user_list) != 0:
@@ -89,14 +90,13 @@ async def create_queue(ctx):
             #create queue and list
             name_string = user_list[0].mention
             await ctx.send(f'Queue Create! First up is {name_string}')
-            print_queue(ctx)
+            await print_queue(ctx)
 
             #start monitoring task
-            bot.loop.create_task(check_users(ctx))
+            #bot.loop.create_task(check_users(ctx))
 
             #clean up
             await msg_cleanup(ctx, msgs, 5)
-            #await voice_obj.channel.connect()
     except:
         #remind user they are not in a voice chat room
         msgs.append(await ctx.send('You are not in a voice channel. Please join and try again'))
@@ -104,7 +104,6 @@ async def create_queue(ctx):
         #clean up
         await msg_cleanup(ctx, msgs, 5)
     
-
 @bot.command(name='next', help='Moves to next person in the queue')
 async def next_up(ctx):
     '''moves to the next person in the queue'''
@@ -209,26 +208,50 @@ async def update(ctx):
 
     #gets voice channel and creates base for missing members
     channel = ctx.message.author.voice.channel
-    #missing_members = list(set(channel.members)-set(user_list))
-    missing_members = channel.members
+    current_members = channel.members
+    user_set = set(user_list)
+    current_set = set(current_members)
 
-    #removes members who are already part of the queue
-    for user in missing_members:
-        if user in user_list:
-            missing_members.remove(user)
+    #check to see if the lists have the same contents
+    if set(user_list) == set(current_members):
+        #if they have the same contents pass
+        pass
+    else:
+        if len(user_list) > len(current_members)-1:
+            #removes members who are no longer part of the voice chat
+            to_prune = user_set.difference(current_members)
+            for user in to_prune:
+                user_list.remove(user)
 
-    for user in missing_members:
-        if user.bot:
-            await ctx.send(f'Cannot add {user.display_name} since they are a bot')
+        elif len(user_list) == len(current_members)-1:
+            #same number in voice chat, but members are different
+            to_add = current_set.difference(user_list)
+            to_prune = user_set.difference(current_members)
+
+            for user in to_prune:
+                user_list.remove(user)
+
+            for user in to_add:
+                if user.bot:
+                    await ctx.send(f'Cannot add {user.display_name} since they are a bot')
+                else:
+                    user_list.append(user)
         else:
-            user_list.append(user)
+            #more members, so add the new ones
+            to_add = user_set.difference(current_members)
 
-    #prints updated queue
-    msgs.append(await ctx.send(f'Queue updated!'))
-    await print_queue(ctx)
+            for user in to_add:
+                if user.bot:
+                    await ctx.send(f'Cannot add {user.display_name} since they are a bot')
+                else:
+                    user_list.append(user)
 
-    #clean up
-    await msg_cleanup(ctx, msgs, 5)
+        #prints updated queue
+        msgs.append(await ctx.send(f'Queue updated!'))
+        await print_queue(ctx)
+
+        #clean up
+        await msg_cleanup(ctx, msgs, 5)
 
 @bot.command(name='end', help='Ends current queue and disconnects from voice chat')
 async def end(ctx):
@@ -241,7 +264,7 @@ async def end(ctx):
 
     #disconnects from voice chat
     server = ctx.message.guild.voice_client
-    #await server.disconnect()
+    await server.disconnect()
     msgs.append(await ctx. send('Ended queue and disconnected. See you next time!'))
 
     #clean up
