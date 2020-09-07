@@ -45,7 +45,7 @@ async def print_queue(ctx):
 
 async def msg_cleanup(ctx, msgs, delay):
     '''deletes messages after given delay'''
-    asyncio.sleep(delay)
+    await asyncio.sleep(delay)
     for msg in msgs:
         await msg.delete()
 
@@ -63,7 +63,8 @@ async def create_queue(ctx):
     '''Creates initial queue of users'''
     global user_list
     msgs = []
-    msgs.append(await ctx.send('Assembling queue...'))
+
+    #msgs.append(await ctx.send('Assembling queue...'))
     voice_obj = ctx.message.author.voice
 
     #checks if user is in voice chat
@@ -208,6 +209,7 @@ async def update(ctx):
 
     #gets voice channel and creates base for missing members
     channel = ctx.message.author.voice.channel
+    #missing_members = list(set(channel.members)-set(user_list))
     missing_members = channel.members
 
     #removes members who are already part of the queue
