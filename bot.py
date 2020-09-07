@@ -26,7 +26,12 @@ async def print_queue(ctx):
     queue_string = ''
     
     for i, user in enumerate(user_list):
-        queue_string = queue_string + f'{i+1}: {user.display_name}\n'
+        if i == 0:
+            queue_string = queue_string + f'{i+1}: {user.mention} is currently choosing\n'
+        elif i == 1:
+            queue_string = queue_string + f'{i+1}: {user.mention} is on deck\n'
+        else:
+            queue_string = queue_string + f'{i+1}: {user.display_name}\n'
 
     embed = discord.Embed(
         title = 'Current Queue',
@@ -40,9 +45,9 @@ async def print_queue(ctx):
 
 ### Bot Tasks ###
 
-#@tasks.loop(seconds=10)
-#async def check_users():
-#    '''checks to see if somebody new joined the voice chat'''
+@tasks.loop(seconds=10)
+async def check_users():
+    '''checks to see if somebody new joined the voice chat'''
 
 
 ### Bot Commands ###
@@ -57,6 +62,7 @@ async def create_queue(ctx):
     #remind user they are not in a voice chat room
     try:
         channel = ctx.message.author.voice.channel
+
         #asks if user wants to create new queue if one already exists
         if len(user_list) != 0:
             #yes/no response
@@ -96,7 +102,11 @@ async def next_up(ctx):
 
     name_string = user_list[0].mention
 
-    await ctx.send(f'Next person is {name_string}')
+    up_next_msg = await ctx.send(f'Next person is {name_string} and the queue is as follows:')
+
+    await print_queue(ctx)
+    time.sleep(5)
+    await up_next_msg.delete()
 
 @bot.command(name='add', help='Adds a person to the queue')
 async def add(ctx, person):
@@ -123,7 +133,7 @@ async def add(ctx, person):
                     added_string = added_string + ', '
 
         await ctx.send(f'{added_string}')
-
+        await print_queue(ctx)
     #clean up bot messages
     if bot_msg != None:
         time.sleep(5)
@@ -158,19 +168,7 @@ async def queue(ctx):
     '''Displays a message with the current queue'''
     global user_list
 
-    queue_string = ''
-    
-    for i, user in enumerate(user_list):
-        queue_string = queue_string + f'{i+1}: {user.display_name}\n'
-
-    embed = discord.Embed(
-        title = 'Current Queue',
-        description = queue_string,
-        color = discord.Color.blue()
-    )
-    
-    #paste embed
-    await ctx.send(embed=embed)
+    await print_queue(ctx)
 
 @bot.command(name='update', help='Updates queue with new users automatically')
 async def update(ctx):
