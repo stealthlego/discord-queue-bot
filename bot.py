@@ -18,7 +18,7 @@ client = discord.Client()
 bot = commands.Bot(command_prefix='?')
 
 #user_list = []
-server_handler = {}
+#server_handler = {}
 
 ### PlayerQueue Class ###
 class PlayerQueue(commands.Cog):
@@ -314,7 +314,6 @@ class PlayerQueue(commands.Cog):
     async def end(self, ctx):
         '''ends queue and disconnects'''
         #del server_handler[ctx.message.author.voice.channel.id]
-
         msgs = []
 
         #disconnects from voice chat
@@ -323,7 +322,7 @@ class PlayerQueue(commands.Cog):
         msgs.append(await self.text_channel.send('Ended queue and disconnected. See you next time!'))
 
         #clean up
-        await self.msg_cleanup(ctx, msgs, 5)
+        await self.msg_cleanup(msgs, 5)
 
 
 ### Helper Functions ###
