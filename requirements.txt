@@ -1,0 +1,5 @@
+### Packages without version number ###
+discord.py[voice]
+
+
+### Packages with version number ###
