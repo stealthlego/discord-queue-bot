@@ -1,5 +1,5 @@
 ### Packages without version number ###
+python-dotenv
 discord.py[voice]
-
 
 ### Packages with version number ###
