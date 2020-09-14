@@ -159,7 +159,7 @@ class PlayerQueue(commands.Cog):
     @tasks.loop(seconds=10)
     async def update_queue_loop(self):
         '''checks voice channel to see if anything has changed'''
-        self.update_queue()
+        await self.update_queue()
 
     ## Commands ##
 
@@ -184,10 +184,11 @@ class PlayerQueue(commands.Cog):
             return
 
         #checks if a queue exists for the current voice channel
+        '''
         if voice_obj.channel.id in server_handler.keys():
             msgs.append(ctx.send(f'Voice channel already has a queue. Please end before re-creating.'))
             await self.msg_cleanup(ctx, msgs, 5)
-            return
+            return'''
 
         self.voice_channel = voice_obj.channel
         self.text_channel = ctx.message.channel
@@ -203,8 +204,11 @@ class PlayerQueue(commands.Cog):
 
         #create queue and list
         name_string = self.user_list[0].mention
-        await self.text_channel.send(f'Queue Create! First up is {name_string}')
-        await self.print_queue()
+        await self.text_channel.send(f'Queue Created! First up is {name_string}')
+        #await self.print_queue()
+
+        #start loops
+        await self.update_queue_loop.start()
 
         #clean up
         await self.msg_cleanup(msgs, 5)
@@ -315,6 +319,8 @@ class PlayerQueue(commands.Cog):
         '''ends queue and disconnects'''
         #del server_handler[ctx.message.author.voice.channel.id]
         msgs = []
+
+        self.user_list = []
 
         #disconnects from voice chat
         server = ctx.message.guild.voice_client
