@@ -333,14 +333,15 @@ class PlayerQueue(commands.Cog):
 
 ### Helper Functions ###
 
+'''
 @tasks.loop(seconds=120)
 async def check_timer():
-    '''checks to see if queues have been running without being modified'''
+    #checks to see if queues have been running without being modified
     global server_handler
 
     for key in server_handler.keys():
         if server_handler[key].check_time() == True:
-            del server_handler[key]
+            del server_handler[key]'''
 
 
 @client.event
