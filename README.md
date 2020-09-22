@@ -36,9 +36,10 @@ QueueBot is a queue generation and managing tool for your discord game nights! I
  1. Clone repository/download zip file
  2. Create .env file in root folder of project
  3. Follow these intructions to et bot token (https://discordpy.readthedocs.io/en/latest/discord.html)
- 4. Add 'DISCORD_BOT_TOKEN=TOKENHERE' to .env file, replacing 'TOKENHERE' with your token
+ 4. Add 'DISCORD_TOKEN=TOKENHERE' to .env file, replacing 'TOKENHERE' with your token
  5. Save .env file
- 6. Run python script
+ 6. Run python script OR build docker container using included dockerfile
  7. Follow these instructions to add your bot to your server (https://discordpy.readthedocs.io/en/latest/discord.html)
+ 
  
 
