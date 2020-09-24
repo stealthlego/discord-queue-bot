@@ -1,3 +1,4 @@
+![Logo](/resources/icon.png)
 # QueueBot
 QueueBot is a queue generation and managing tool for your discord game nights! It is perfect for games like Halo where matches are quick, and game times vary from match to match and making sure everybody gets a chance to pick a game mode is important. Queues are built right from your current voice channel with flexible management to add, remove, reshuffle and more!
  
