@@ -7,30 +7,30 @@ QueueBot is a queue generation and managing tool for your discord game nights! I
  *Coming Soon!*
  
  ## Usage Instructions
- The current hot key is '?' (changing soon due to so many conflicts) and the commands are as follows:
+ The current hot key is '{' and the commands are as follows:
  
- ### ?create
+ ### {create
  - Creates player queue from current voice channel. Must be in voice channel to create queue (may add text only version later)
  
- ### ?add @user
+ ### {add @user
  - Adds specific player if they were missed earlier
  
- ### ?remove @user
+ ### {remove @user
  - Removes specific player of they are no longer wanted in the queue
  
- ### ?next
+ ### {next
  - Moves current top of list to end of the list and promotes the number two to top of queue
  
- ### ?reshuffle
+ ### {shuffle
  - Reshuffles current queue of players
  
- ### ?update
+ ### {update
  - Automatically adds or removes players if they have joined/left voice channel
  
- ### ?queue
+ ### {queue
  - Lists current queue of players
  
- ### ?end
+ ### {end
  - Deletes queue and bot leaves voice channel
  
  ## Self Hosting Instructions
@@ -41,6 +41,3 @@ QueueBot is a queue generation and managing tool for your discord game nights! I
  5. Save .env file
  6. Run python script OR build docker container using included dockerfile
  7. Follow these instructions to add your bot to your server (https://discordpy.readthedocs.io/en/latest/discord.html)
- 
- 
-
