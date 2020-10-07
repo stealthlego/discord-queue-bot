@@ -4,7 +4,7 @@ QueueBot is a queue generation and managing tool for your discord game nights! I
  
  
  ## Add to your server!
- *Coming Soon!*
+ [Add link](https://discord.com/api/oauth2/authorize?client_id=751980977567432764&permissions=36972608&scope=bot)
  
  ## Usage Instructions
  The current hot key is '{' and the commands are as follows:
