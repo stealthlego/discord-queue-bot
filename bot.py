@@ -6,6 +6,7 @@ import random
 import time
 import datetime
 
+#import dbl
 import discord
 from discord.ext import commands, tasks
 import asyncio
@@ -13,6 +14,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
+DBL_TOKEN = os.getenv('DBL_TOKEN')
 
 bot = commands.Bot(command_prefix='{')
 
@@ -144,6 +146,20 @@ class PlayerQueue():
 
             #clean up
             await msg_cleanup(self.text_channel, msgs, 5)
+
+'''
+#Boilerplate example from top gg for automatic server count
+class TopGG(commands.Cog):
+    """Handles interactions with the top.gg API"""
+
+    def __init__(self, bot):
+        self.bot = bot
+        self.token = DBL_TOKEN # set this to your DBL token
+        self.dblpy = dbl.DBLClient(self.bot, self.token, autopost=True) # Autopost will post your guild count every 30 minutes
+
+async def on_guild_post():
+    print("Server count posted successfully")
+    '''
 
 ### Helper Functions ###
 
@@ -369,9 +385,10 @@ async def end(ctx):
 async def on_ready():
     '''Prints message on server connection'''
     print(f'\n{bot.user.name} has connected to Discord!\n')
-    activity = discord.Activity(type= discord.ActivityType.listening, name=f"to {len(server_handler)} queues")
+    activity = discord.Activity(type= discord.ActivityType.playing, name=f"{'help {'} | {len(server_handler)} queues")
     await bot.change_presence(status=discord.Status.online, activity=activity)
     await queue_prune.start()
 
+#bot.add_cog(TopGG(bot))
 bot.run(TOKEN)
 
