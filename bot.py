@@ -215,10 +215,12 @@ async def create_queue(ctx):
     try:
         voice_obj = ctx.message.author.voice
         channel = ctx.author.voice.channel
+        '''
         try:
             await channel.connect()
         except:
             pass
+        '''
     except Exception as e:
         print(str(e))
         #remind user they are not in a voice chat room
@@ -237,13 +239,15 @@ async def create_queue(ctx):
         else:
             await user_queue.append_user(user)
 
-    await user_queue.shuffle_queue()
-
-    #create queue and list
-    name_string = user_queue.user_list[0].mention
-    await user_queue.text_channel.send(f'Queue Created! First up is {name_string}')
-    await user_queue.print_queue()
-    await bot.change_presence(activity=discord.Game(f"{'{'}help | {len(server_handler)} queues"))
+    try:
+        #create queue and list
+        await user_queue.shuffle_queue()
+        name_string = user_queue.user_list[0].mention
+        msgs.append(await ctx.send(f'Queue Created! First up is {name_string}'))
+        await user_queue.print_queue()
+        await bot.change_presence(activity=discord.Game(f"{'{'}help | {len(server_handler)} queues"))
+    except:
+        msgs.append(await ctx.send('An error has occurred!. Please re-join  your voice channel and try again'))
 
     #clean up
     await msg_cleanup(msgs, 5)
@@ -369,8 +373,8 @@ async def end(ctx):
 
     #disconnects from voice chat
     server = ctx.message.guild.voice_client
-    await server.disconnect()
-    msgs.append(await ctx.send('Ended queue and disconnected. See you next time!'))
+    #await server.disconnect()
+    msgs.append(await ctx.send('Ended queue, see you next time!'))
     await bot.change_presence(activity=discord.Game(f"{'{'}help | {len(server_handler)} queues"))
 
     #clean up
