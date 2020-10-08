@@ -14,13 +14,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-DBL_TOKEN = os.getenv('DBL_TOKEN')
+#DBL_TOKEN = os.getenv('DBL_TOKEN')
 
 bot = commands.Bot(command_prefix='{')
 
 server_handler = {}
 
-### PlayerQueue Class ###
+### Classes ###
 class PlayerQueue():
     '''Queue object to maintain queue list and timing'''
     def __init__(self, voice_client, voice, text):
@@ -187,8 +187,7 @@ async def queue_prune():
     for key in key_holder:
         del server_handler[key] 
 
-    activity = discord.Activity(type= discord.ActivityType.listening, name=f"to {len(server_handler)} queues")
-    await bot.change_presence(status=discord.Status.online, activity=activity)
+    await bot.change_presence(activity=discord.Game(f"{'{'}help | {len(server_handler)} queues"))
 
 async def get_user_list(ctx):
     '''returns PlayerQueue for voice channel or new PlayerQueue if new'''
@@ -220,7 +219,6 @@ async def create_queue(ctx):
             await channel.connect()
         except:
             pass
-        
     except Exception as e:
         print(str(e))
         #remind user they are not in a voice chat room
@@ -234,10 +232,8 @@ async def create_queue(ctx):
     user_queue = await get_user_list(ctx)
 
     for user in user_queue.voice_channel.members:
-        print(user.name)
         if user.bot:
             pass
-            #await ctx.send(f'Cannot add {user.display_name} since they are a bot')
         else:
             await user_queue.append_user(user)
 
@@ -247,9 +243,7 @@ async def create_queue(ctx):
     name_string = user_queue.user_list[0].mention
     await user_queue.text_channel.send(f'Queue Created! First up is {name_string}')
     await user_queue.print_queue()
-
-    #start loops
-    #await user_queue.update_queue_loop.start()
+    await bot.change_presence(activity=discord.Game(f"{'{'}help | {len(server_handler)} queues"))
 
     #clean up
     await msg_cleanup(msgs, 5)
@@ -377,6 +371,7 @@ async def end(ctx):
     server = ctx.message.guild.voice_client
     await server.disconnect()
     msgs.append(await ctx.send('Ended queue and disconnected. See you next time!'))
+    await bot.change_presence(activity=discord.Game(f"{'{'}help | {len(server_handler)} queues"))
 
     #clean up
     await msg_cleanup(msgs, 5)
@@ -385,8 +380,7 @@ async def end(ctx):
 async def on_ready():
     '''Prints message on server connection'''
     print(f'\n{bot.user.name} has connected to Discord!\n')
-    activity = discord.Activity(type= discord.ActivityType.playing, name=f"{'help {'} | {len(server_handler)} queues")
-    await bot.change_presence(status=discord.Status.online, activity=activity)
+    await bot.change_presence(activity=discord.Game(f"{'{'}help | {len(server_handler)} queues"))
     await queue_prune.start()
 
 #bot.add_cog(TopGG(bot))
