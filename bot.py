@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
-STATUS = 'DEPLOY' #use beta tag when testing
+STATUS = 'DEPLOY' #use BETA tag when testing
 TOKEN = ''
 PREFIX = ''
 
