@@ -19,7 +19,8 @@ else:
     PREFIX = os.getenv('PREFIX')
 
 initial_extensions = [
-    "cogs.queuecog"
+    "cogs.queuecog",
+    "cogs.topggcog"
 ]
 
 bot = commands.Bot(command_prefix=f'{PREFIX}')

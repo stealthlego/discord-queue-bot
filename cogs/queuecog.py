@@ -10,16 +10,15 @@ from discord.ext import commands, tasks
 import asyncio
 
 server_handler = {}
-reactions = ["➡️", "✅", "❌", "🔄", "🔀", "🛑"]
-instructions = ["Next player", "React to add yourself to the queue", "Remove yourself from the queue", "Force update the queue (voice queues only)", "Shuffle queue", "End queue"]
+reactions = ["\U000027A1", "\U00002705", "\U0000274C", "\U0001F504", "\U0001F500", "\U0001F6D1"]
+instructions = ["Next player", "Add yourself to the queue", "Remove yourself from the queue", "Force update the queue", "Shuffle queue", "End queue"]
 
 class PlayerQueue():
     '''Queue object to maintain queue list and timing'''
-    def __init__(self, voice_client, voice, text):
+    def __init__(self, voice, text, users):
         super().__init__()
-        self.user_list = []
+        self.user_list = users
         self.last_event = datetime.datetime.now()
-        self.voice_client = voice_client
         self.voice_channel = voice
         self.text_channel = text
         self.embed_exists = False
@@ -74,21 +73,21 @@ class PlayerQueue():
             else:
                 queue_string = queue_string + f'{i+1}: {user.display_name}\n'
 
-        '''
         # add command prompts for reactions
-        queue_string = queue_string + f'\n**Reaction Commands**\n'
+        commands_string = ''
 
         react_qty = len(reactions)
         for i in range(react_qty):
-            queue_string = queue_string + f'{reactions[i]} = {instructions[i]}\n'
-
-        '''
+            commands_string = commands_string + f'{reactions[i]} = {instructions[i]}\n'
 
         self.embed = discord.Embed(
-            title = 'Current Queue',
-            description = queue_string,
+            title = f'{self.voice_channel.name} Queue',
+            #description = queue_string,
             color = discord.Color.blue()
-        )       
+        )
+
+        self.embed.add_field(name='Queue', value=queue_string)
+        self.embed.add_field(name='Commands', value=commands_string)
 
     async def update_queue(self):
         '''checks voice channel to see if anything has changed'''
@@ -152,9 +151,11 @@ class QueueCog(commands.Cog):
     async def get_user_list(self, ctx):
         '''returns PlayerQueue for voice channel or new PlayerQueue if new'''
         if server_handler.get(ctx.message.author.voice.channel.id) == None:
-            new_queue = PlayerQueue(ctx.message.guild.voice_client, ctx.message.author.voice.channel, ctx.message.channel)
-            server_handler[ctx.message.author.voice.channel.id] = new_queue
-            return new_queue
+            msgs = []
+            msgs.append(await ctx.send('Queue for this channel does not exist, try creating one first'))
+
+            #clean up
+            await self.msg_cleanup(msgs, 5)
         else:
             return server_handler.get(ctx.message.author.voice.channel.id)
 
@@ -175,8 +176,8 @@ class QueueCog(commands.Cog):
         else:
             await queue.embed_msg.edit(embed=queue.embed)
 
-        #for emoji in reactions: 
-        #    await queue.embed_msg.add_reaction(emoji)
+        for emoji in reactions: 
+            await queue.embed_msg.add_reaction(emoji)
             
     @tasks.loop(seconds=360)
     async def queue_prune(self):
@@ -188,7 +189,7 @@ class QueueCog(commands.Cog):
             for key in server_handler:
 
                 time_d = datetime.datetime.now() - server_handler[key].last_event
-                if time_d.hours > 1: #1 hour
+                if time_d.total_seconds() > 3600: #1 hour
                     msgs = []
 
                     text_channel = server_handler[key].text_channel
@@ -213,14 +214,10 @@ class QueueCog(commands.Cog):
 
         #checks if user is in voice chat
         try:
-            voice_obj = ctx.message.author.voice
-            channel = ctx.author.voice.channel
-            '''
-            try:
-                await channel.connect()
-            except:
+            voice_obj = ctx.message.author.voice.channel.id
+
+            if voice_obj != None:
                 pass
-            '''
         except Exception as e:
             print(str(e))
             #remind user they are not in a voice chat room
@@ -230,29 +227,35 @@ class QueueCog(commands.Cog):
             await self.msg_cleanup(msgs, 5)
             return
 
-        #get user list 
-        user_queue = await self.get_user_list(ctx)
+        #check if there is a queue for this voice chat
+        if ctx.message.author.voice.channel.id in server_handler.keys():
+            msgs.append(await ctx.send('There is already a queue for this voice channel'))
+        else:
+            #create user list 
+            voice = ctx.message.author.voice.channel
+            text = ctx.message.channel
+            user_queue = []
 
-        for user in user_queue.voice_channel.members:
-            if user.bot:
-                pass
+            for user in ctx.message.author.voice.channel.members:
+                if user.bot:
+                    pass
+                else:
+                    user_queue.append(user)
+            
+            if len(user_queue) == 0:
+                msgs.append(await ctx.send('An error has occurred!. Please re-join  your voice channel and try again'))
             else:
-                await user_queue.append_user(user)
-
-        try:
-            #create queue and list
-            await user_queue.shuffle_queue()
-            name_string = user_queue.user_list[0].mention
-            #msgs.append(await ctx.send(f'Queue Created! First up is {name_string}'))
-            await self.update_embed(user_queue)
-            await self.bot.change_presence(activity=discord.Game(f"{'{'}help | {len(server_handler)} queues"))
-        except:
-            msgs.append(await ctx.send('An error has occurred!. Please re-join  your voice channel and try again'))
+                #add to server handler object for storage
+                current_queue = PlayerQueue(voice, text, user_queue)
+                server_handler[voice.id] = current_queue
+                await server_handler[voice.id].shuffle_queue()
+                await self.update_embed(server_handler[voice.id])
+                await self.bot.change_presence(activity=discord.Game(f"{'{'}help | {len(server_handler)} queues"))
 
         #clean up
         await self.msg_cleanup(msgs, 5)
         
-    @commands.command(name='next', help='Moves to next person in the queue')
+    #@commands.command(name='next', help='Moves to next person in the queue')
     async def next_up(self, ctx):
         '''moves to the next person in the queue'''
         msgs = []
@@ -268,7 +271,7 @@ class QueueCog(commands.Cog):
         #clean up
         await self.msg_cleanup(msgs, 5)
 
-    @commands.command(name='add', help='Adds a person to the queue')
+    #@commands.command(name='add', help='Adds a person to the queue')
     async def add(self, ctx):
         '''adds a specific person to the queue'''
         msgs = []
@@ -308,7 +311,7 @@ class QueueCog(commands.Cog):
         if len(msgs) != 0:
             await self.msg_cleanup(msgs, 5)
 
-    @commands.command(name='remove', help='Removes a specific person from the queue')
+    #@commands.command(name='remove', help='Removes a specific person from the queue')
     async def remove(self, ctx, person):
         '''removes specific person from queue'''
         msgs = []
@@ -348,13 +351,13 @@ class QueueCog(commands.Cog):
         await self.update_embed(user_queue)
         user_queue.last_event = datetime.datetime.now()
 
-    @commands.command(name='update', help='Updates queue with new users automatically')
+    #@commands.command(name='update', help='Updates queue with new users automatically')
     async def force_update(self, ctx):
         '''updates queue automatically'''
         user_queue = await self.get_user_list(ctx)
         await self.update_embed(user_queue)
 
-    @commands.command(name='shuffle', help='Reshuffles current queue')
+    #@commands.command(name='shuffle', help='Reshuffles current queue')
     async def shuffle(self, ctx):
         '''reshuffles current queue list'''
         msgs = []
@@ -368,7 +371,7 @@ class QueueCog(commands.Cog):
         user_queue.last_event = datetime.datetime.now()
         await self.msg_cleanup(msgs, 5)
 
-    @commands.command(name='end', help='Ends current queue')
+    @commands.command(name='end', help='Force ends current queue')
     async def end(self, ctx):
         '''ends queue and disconnects'''
         msgs = []
@@ -382,28 +385,64 @@ class QueueCog(commands.Cog):
         #clean up
         await self.msg_cleanup(msgs, 5)
 
-    #@commands.Cog.listener()
+    @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
-        #message = reaction.message
-        emoji = reaction.emoji
-
+        
         if user.bot:
             return
 
+        emoji = reaction.emoji
+        msgs = []
+        user_queue = server_handler.get(user.voice.channel.id)
+
         if emoji == reactions[0]:
-            await self.next_up()
+            #gets new leader and mentions them
+            name_string = await user_queue.next_user()
+            msgs.append(await user_queue.text_channel.send(f'{name_string} is up!'))
+            await self.update_embed(user_queue)
+            user_queue.last_event = datetime.datetime.now()
+            
         elif emoji == reactions[1]:
-            await self.add()
+            #adds user to queue
+            await user_queue.append_user(user)
+            added_string = f'Added {user.display_name}'
+            msgs.append(await user_queue.text_channel.send(f'{added_string}'))
+            await self.update_embed(user_queue)
+            user_queue.last_event = datetime.datetime.now()
+
         elif emoji == reactions[2]:
-            await self.remove()
+            #removes users from queue
+            await user_queue.remove_user(user)
+            removed_string = f'Added {user.display_name}'
+            msgs.append(await user_queue.text_channel.send(f'{removed_string}'))
+            await self.update_embed(user_queue)
+            user_queue.last_event = datetime.datetime.now()
+
         elif emoji == reactions[3]:
-            await self.force_update()
+            #forces queue to update based on voice channel
+            await self.update_embed(user_queue)
+
         elif emoji == reactions[4]:
-            await self.shuffle()
+            #shuffles queue
+            await user_queue.shuffle_queue()
+            msgs.append(await user_queue.text_channel.send(f'Queue Shuffled!'))
+            await self.update_embed(user_queue)
+            user_queue.last_event = datetime.datetime.now()
+
         elif emoji == reactions[5]:
-            await self.end()
+            #deletes queue
+            del server_handler[user.voice.channel.id] 
+            msgs.append(await reaction.message.channel.send('Ended queue, see you next time!'))
+            await self.bot.change_presence(activity=discord.Game(f"{'{'}help | {len(server_handler)} queues"))
+            msgs.append(user_queue.embed_msg)
+
         else:
-            return
+            pass
+
+        #clean up
+        await reaction.remove(user)
+        if len(msgs) > 0:
+            await self.msg_cleanup(msgs, 5)
 
 def setup(bot):
     cog = QueueCog(bot)

@@ -1,5 +1,6 @@
 ### Packages without version number ###
 python-dotenv
 discord.py[voice]
+dblpy
 
 ### Packages with version number ###
