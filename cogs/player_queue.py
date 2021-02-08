@@ -5,7 +5,7 @@ import random
 import discord
 
 class PlayerQueue():
-    def __init__(self, guild_id, voice_id, text_id, member_id_list):
+    def __init__(self, guild, voice_id, text_id, member_id_list):
         """Creates player queue for particular channel
 
         Args:
@@ -36,7 +36,7 @@ class PlayerQueue():
         return wrapper
 
     @update_event
-    async def append_user(self, member_id):
+    async def add_user(self, member_id):
         """Adds member to queue
 
         Args:
