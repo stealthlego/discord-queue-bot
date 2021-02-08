@@ -10,55 +10,46 @@ from discord.ext import commands, tasks
 import asyncio
 
 server_handler = {}
-reactions = ["\U000027A1", "\U00002705", "\U0000274C", "\U0001F504", "\U0001F500", "\U0001F6D1"]
-instructions = ["Next player", "Add yourself to the queue", "Remove yourself from the queue", "Force update the queue", "Shuffle queue", "End queue"]
+reactions = [
+    "\U000027A1", 
+    "\U00002705", 
+    "\U0000274C", 
+    "\U0001F504", 
+    "\U0001F500", 
+    "\U0001F6D1"
+]
+instructions = [
+    "Next player", 
+    "Add yourself to the queue", 
+    "Remove yourself from the queue", 
+    "Force update the queue", 
+    "Shuffle queue", 
+    "End queue"
+]
 
-class PlayerQueue():
-    '''Queue object to maintain queue list and timing'''
-    def __init__(self, voice, text, users):
-        super().__init__()
-        self.user_list = users
-        self.last_event = datetime.datetime.now()
-        self.voice_channel = voice
-        self.text_channel = text
-        self.embed_exists = False
-        self.embed = None
-        self.embed_msg = None
 
-    ## Internal Functions ##
+class QueueCommandCog(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.queue_prune.start()
 
-    async def append_user(self, user):
-        '''adds user to user list'''
-        self.user_list.append(user)
-        self.last_event = datetime.datetime.now()
+    ### helper functions ###
+    async def get_user_list(self, ctx):
+        '''returns PlayerQueue for voice channel or new PlayerQueue if new'''
+        if server_handler.get(ctx.message.author.voice.channel.id) == None:
+            msgs = []
+            msgs.append(await ctx.send('Queue for this channel does not exist, try creating one first'))
 
-    async def remove_user(self, user):
-        '''removes user from list'''
-        self.user_list.remove(user)
-        self.last_event = datetime.datetime.now()
+            #clean up
+            await self.msg_cleanup(msgs, 5)
+        else:
+            return server_handler.get(ctx.message.author.voice.channel.id)
 
-    async def next_user(self):
-        '''updates list and gets next person'''
-        user = self.user_list.pop(0)
-        self.user_list.append(user)
-        self.last_event = datetime.datetime.now()
-
-        return self.user_list[0].mention
-    
-    async def shuffle_queue(self):
-        '''shuffles list'''
-        random.shuffle(self.user_list)
-        self.last_event = datetime.datetime.now()
-    
-    async def whos_up(self):
-        '''returns who is currently up'''
-        self.last_event = datetime.datetime.now()
-        return self.user_list[0]
-        
-    async def current_queue(self):
-        '''returns current list - should not be modified'''
-        self.last_event = datetime.datetime.now()
-        return self.user_list
+    async def msg_cleanup(self, msgs, delay):
+        '''deletes messages after given delay'''
+        await asyncio.sleep(delay)
+        for msg in msgs:
+            await msg.delete()
 
     async def generate_embed(self):
         '''prints current queue to text channel'''
@@ -88,82 +79,6 @@ class PlayerQueue():
 
         self.embed.add_field(name='Queue', value=queue_string)
         self.embed.add_field(name='Commands', value=commands_string)
-
-    async def update_queue(self):
-        '''checks voice channel to see if anything has changed'''
-        msgs = []
-        user_list = await self.current_queue()
-        
-        #gets voice channel and creates base for missing members
-        current_members = self.voice_channel.members
-        user_set = set(user_list)
-        current_set = set(current_members)
-
-        #check to see if the lists have the same contents
-        if set(user_list) == set(current_members):
-            #if they have the same contents pass
-            pass
-        else:
-            if len(user_list) > len(current_members)-1:
-                #removes members who are no longer part of the voice chat
-                to_prune = user_set.difference(current_members)
-                for user in to_prune:
-                    await self.remove_user(user)
-
-            elif len(user_list) == len(current_members)-1:
-                #same number in voice chat, but members are different
-                to_add = current_set.difference(user_list)
-                to_prune = user_set.difference(current_members)
-
-                for user in to_prune:
-                    await self.remove_user(user)
-
-                for user in to_add:
-                    if user.bot:
-                        #await self.text_channel.send(f'Cannot add {user.display_name} since they are a bot')
-                        pass
-                    else:
-                        await self.append_user(user)
-            else:
-                #more members, so add the new ones
-                to_add = user_set.difference(current_members)
-
-                for user in to_add:
-                    if user.bot:
-                        #await self.text_channel.send(f'Cannot add {user.display_name} since they are a bot')
-                        pass
-                    else:
-                        await self.append_user(user)
-
-            #prints updated queue
-            msgs.append(await self.text_channel.send(f'Queue updated!'))
-            await self.print_queue()
-            self.last_event = datetime.datetime.now()
-
-            return msgs
-
-class QueueCog(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-        self.queue_prune.start()
-
-    ### helper functions ###
-    async def get_user_list(self, ctx):
-        '''returns PlayerQueue for voice channel or new PlayerQueue if new'''
-        if server_handler.get(ctx.message.author.voice.channel.id) == None:
-            msgs = []
-            msgs.append(await ctx.send('Queue for this channel does not exist, try creating one first'))
-
-            #clean up
-            await self.msg_cleanup(msgs, 5)
-        else:
-            return server_handler.get(ctx.message.author.voice.channel.id)
-
-    async def msg_cleanup(self, msgs, delay):
-        '''deletes messages after given delay'''
-        await asyncio.sleep(delay)
-        for msg in msgs:
-            await msg.delete()
 
     async def update_embed(self, queue):
         '''Updates embed with current queue'''
@@ -445,5 +360,5 @@ class QueueCog(commands.Cog):
             await self.msg_cleanup(msgs, 5)
 
 def setup(bot):
-    cog = QueueCog(bot)
+    cog = QueueCommandCog(bot)
     bot.add_cog(cog)

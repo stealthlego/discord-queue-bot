@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
-STATUS = 'DEPLOY' #use BETA tag when testing
+STATUS = 'BETA' #use BETA tag when testing
 TOKEN = ''
 PREFIX = ''
 
@@ -19,8 +19,8 @@ else:
     PREFIX = os.getenv('PREFIX')
 
 initial_extensions = [
-    "cogs.queuecog",
-    "cogs.topggcog"
+    "cogs.queue_cog",
+    #"cogs.topgg_cog"
 ]
 
 bot = commands.Bot(command_prefix=f'{PREFIX}')
