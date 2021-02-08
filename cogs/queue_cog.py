@@ -1,7 +1,4 @@
 from asyncio.tasks import current_task
-import os
-import random
-import time
 import datetime
 from attr import dataclass
 
@@ -27,7 +24,6 @@ instructions = [
     "End queue"
 ]
 
-
 class QueueCommandCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -51,42 +47,42 @@ class QueueCommandCog(commands.Cog):
         for msg in msgs:
             await msg.delete()
 
-    async def generate_embed(self):
+    async def generate_embed(self, queue):
         '''prints current queue to text channel'''
-        user_list = await self.current_queue()
         queue_string = ''
+        guild = discord.Client.get_guild(queue.guild_id)
         
-        for i, user in enumerate(user_list):
+        for i, member in enumerate(queue.member_list):
             if i == 0:
-                queue_string = queue_string + f'{i+1}: {user.mention} is currently up!\n'
+                queue_string = queue_string + f'{i+1}: {guild.get_member(member).mention} is currently up!\n'
             elif i == 1:
-                queue_string = queue_string + f'{i+1}: {user.mention} is on deck\n'
+                queue_string = queue_string + f'{i+1}: {guild.get_member(member).mention} is on deck\n'
             else:
-                queue_string = queue_string + f'{i+1}: {user.display_name}\n'
+                queue_string = queue_string + f'{i+1}: {guild.get_member(member).display_name}\n'
 
         # add command prompts for reactions
         commands_string = ''
 
-        react_qty = len(reactions)
-        for i in range(react_qty):
+        for i in range(len(reactions)):
             commands_string = commands_string + f'{reactions[i]} = {instructions[i]}\n'
 
-        self.embed = discord.Embed(
-            title = f'{self.voice_channel.name} Queue',
+        queue.embed = discord.Embed(
+            title = f'{guild.get_channel(queue.voice_id).name} Queue',
             #description = queue_string,
             color = discord.Color.blue()
         )
 
-        self.embed.add_field(name='Queue', value=queue_string)
-        self.embed.add_field(name='Commands', value=commands_string)
+        queue.embed.add_field(name='Queue', value=queue_string)
+        queue.embed.add_field(name='Commands', value=commands_string)
 
     async def update_embed(self, queue):
         '''Updates embed with current queue'''
+        guild = discord.Client.get_guild(queue.guild_id)
         await queue.generate_embed()
 
         #paste embed
         if queue.embed_exists == False:
-            queue.embed_msg = await queue.text_channel.send(embed=queue.embed)
+            queue.embed_msg = await guild.get_channel(queue.text_id).send(embed=queue.embed)
             queue.embed_exists = True
         else:
             await queue.embed_msg.edit(embed=queue.embed)
@@ -277,13 +273,14 @@ class QueueCommandCog(commands.Cog):
         '''reshuffles current queue list'''
         msgs = []
         msgs.append(ctx.message)
-        user_queue = await self.get_user_list(ctx)
+        queue = await server_handler.get(key=ctx.message.guild.id)
 
-        await user_queue.shuffle_queue()
+        await queue.shuffle_queue()
+        text_channel = ctx.message.guild.get_channel(queue.text_id)
+        msgs.append(await text_channel.send(f'Queue Shuffled!'))
 
-        msgs.append(await user_queue.text_channel.send(f'Queue Shuffled!'))
-        await self.update_embed(user_queue)
-        user_queue.last_event = datetime.datetime.now()
+        await self.update_embed(member_queue)
+        member_queue.last_event = datetime.datetime.now()
         await self.msg_cleanup(msgs, 5)
 
     @commands.command(name='end', help='Force ends current queue')
