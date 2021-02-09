@@ -88,7 +88,7 @@ class QueueCommandCog(commands.Cog):
         for emoji in reactions: 
             await queue.embed_msg.add_reaction(emoji)
             
-    @tasks.loop(seconds=360)
+    @tasks.loop(seconds=120)
     async def queue_prune(self):
         '''prunes old queues'''
         key_holder = []
@@ -97,13 +97,10 @@ class QueueCommandCog(commands.Cog):
             print('Checking for stale queues...')
             for key in server_handler:
 
-                time_d = datetime.datetime.now() - server_handler[key].last_event
-                if time_d.total_seconds() > 3600: #1 hour
+                time_delta = datetime.now() - server_handler[key].last_event
+                if time_delta.total_seconds() > 3600: #1 hour
                     msgs = []
-
-                    text_channel = server_handler[key].text_channel
-                    msgs.append(await text_channel.send('Queue timed out, ended queue and disconnected. See you next time!'))
-
+                    msgs.append(await server_handler[key].text.send('Queue timed out, ended queue and disconnected. See you next time!'))
                     key_holder.append(key)
 
                     #clean up
@@ -111,8 +108,7 @@ class QueueCommandCog(commands.Cog):
 
         for key in key_holder:
             del server_handler[key] 
-
-            await self.bot.change_presence(activity=discord.Game(f"{'{'}help | {len(server_handler)} queues"))
+        await self.bot.change_presence(activity=discord.Game(f"{'{'}help | {len(server_handler)} queues"))
 
     ### commands ###
     @commands.command(name='create', help='Creates initial queue of users')
@@ -276,7 +272,7 @@ class QueueCommandCog(commands.Cog):
         await self.update_embed(queue)
         await self.msg_cleanup(msgs, 5)
 
-    @commands.command(name='end', help='Force ends current queue')
+    @commands.command(name='end', help='Ends current queue')
     async def end(self, ctx):
         '''ends queue and disconnects'''
         msgs = []
