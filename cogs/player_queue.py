@@ -5,60 +5,60 @@ import random
 import discord
 
 class PlayerQueue():
-    def __init__(self, guild, voice_id, text_id, member_id_list):
+    def __init__(self, guild, voice, text, member_list):
         """Creates player queue for particular channel
 
         Args:
-            guild_id (int): id of guild for current queue
-            voice_id (int): id of voice channel being used to build queue
-            text_id (int): text channel id for posting msgs and embeds
-            member_id_list (list): list of user ids for current queue (int)
+            guild_id (guild_obj): id of guild for current queue
+            voice_id (voice_channel): id of voice channel being used to build queue
+            text_id (text_channel): text channel id for posting msgs and embeds
+            member_list (list): list of members for current queue  (member_obj)
         """
         super().__init__()
         self.last_event = datetime.now()
-        self.guild_id = guild_id
-        self.member_list = member_id_list
-        self.voice_id = voice_id
-        self.text_id= text_id
+        self.guild = guild
+        self.member_list = member_list
+        self.voice = voice
+        self.text = text
         self.embed_exists = False
         self.embed = None
         self.embed_msg = None
 
     ## Internal Functions ##
 
-    async def update_event(self, func):
+    def update_event(func):
         """
         updates last event with current time
         """
-        def wrapper():
-            func()
+        async def wrapper(self, *args, **kwargs):
+            await func(self, *args, **kwargs)
             self.last_event = datetime.now()
         return wrapper
 
     @update_event
-    async def add_user(self, member_id):
+    async def add_user(self, member):
         """Adds member to queue
 
         Args:
             user_id (int): user id to identify member
         """
-        self.member_list.append(member_id)
+        self.member_list.append(member)
 
     @update_event
-    async def remove_user(self, member_id):
+    async def remove_user(self, member):
         """Removes member from queue
 
         Args:
             member_id (int): member to remove from queue
         """
-        self.member_list.remove(member_id)
+        self.member_list.remove(member)
 
     @update_event
     async def next_user(self):
         """Returns next member in queue
 
         Returns:
-            int: member id for person first in line
+            member_obj: member obj for person first in line
         """
         member = self.member_list.pop(0)
         self.member_list.append(member)
@@ -78,7 +78,7 @@ class PlayerQueue():
 
 
         Returns:
-            int: member id of current person at top of queue
+            member_obj: member_obj of current person at top of queue
         """
         return self.member_list[0]
         
@@ -87,7 +87,7 @@ class PlayerQueue():
         """returns current list - should not be modified
 
         Returns:
-            list: list of member ids for current queue
+            list: list of member_objs for current queue
         """
         return self.member_list
 

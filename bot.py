@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 STATUS = 'BETA' #use BETA tag when testing
 TOKEN = ''
-PREFIX = ''
+PREFIX = '??'
 
 load_dotenv()
 if STATUS == 'BETA':
